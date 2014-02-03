@@ -1,0 +1,104 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Upload Test</title>
+</head>
+<body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+
+    $(document).ready(function(){
+        $('#imageContainer').hide();
+        $('#fileMeta').hide();
+        $('img#loading').hide();
+
+            var fileArr=[];
+            $('#upload_file').on('change', function(){
+                var myFile = document.getElementById('upload_file').files[0];
+                fileArr.push(myFile);
+                $('.filenames').append('<p>'+myFile.name+'</p>');
+            });
+
+            $('.submitFileButton').on('click', function(){
+
+                //clear past html content
+                $('span.err').text('');
+                $('#imageContainer').html('');
+                $('img#loading').show();
+
+
+                var formData = new FormData(),
+                    file_meta={},
+                    apiURL= '/upload',
+                    apiMethod= 'POST';
+
+                fileArr.forEach(function(file){
+
+                    formData.append('media', file);
+
+                    //file meta included in the following way:
+                    file_meta[file.name] = {arbitrary_additional_param: 3};
+
+                });
+
+                formData.append('json_params',JSON.stringify({file_meta : file_meta}));
+
+                var xhr = new XMLHttpRequest();
+
+                xhr.onreadystatechange = function(ev){
+                    if (xhr.readyState == 4 && xhr.responseText) {
+                        $('img#loading').hide();
+                        try{
+
+                            var resp= JSON.parse(xhr.responseText);
+                            console.log('response', resp)
+                            if(xhr.status && xhr.status >= 400){
+                                $('span.err').text('Error: '+xhr.responseText);
+                            }else{
+                                resp.file_data.forEach(function(file){
+                                    var contentUrl= file.url;
+                                    if(contentUrl && /image/.test(file.type)){
+
+                                        $('#imageContainer').append('<img src="'+contentUrl+'"/><br>');
+                                        $('#imageContainer').show();
+
+                                    }
+                                    $('#fileMeta').append(JSON.stringify(file,null, '   '));
+                                    $('#fileMeta').show();
+                                })
+
+                            }
+                        }catch(e){
+                            console.log(xhr.responseText)
+                            $('span.err').text('Error: Could not parser server response');
+                        }
+                    }
+                } ;
+                xhr.open(apiMethod, apiURL);
+                xhr.send(formData);
+            })
+
+
+    })
+</script>
+
+<b>Ready to upload your files:</b><br>
+Upload multiple by executing file selection multiple times before clicking submit.
+<span>
+    <span class="filenames"></span><br>
+    <input id="upload_file" type="file" name="files"/><br>
+    <input class="submitFileButton" type="submit">
+</span>
+
+<br><br>
+
+<span id="imageContainer">Output image(s):</span><br><br>
+<pre><span id="fileMeta">Output file meta:</span><br><br></pre>
+
+<span class="err"></span>
+<br>
+
+<img id="loading" src="loading1.gif"/>
+
+</body>
+</html>
