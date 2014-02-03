@@ -1,21 +1,14 @@
 
 var mongodb= require('mongodb'),
     Express= require('express'),
-    UploadStreamMiddleware= require('./../gridUploader')
+    UploadStreamMiddleware= require('./../uploadToGridfsCloudinary')
     http= require('http');
 
-/*var mongoUrl= 'yourMongoUrl',
+var mongoUrl= 'yourMongoUrl',
     cloudinaryConf={
         cloud_name: 'yourCloudinaryName',
         api_key: 'yourApiKey',
         api_secret: 'yourApiSecret'
-    };
-    */
-var mongoUrl= 'mongodb://monsoon:monsoon1855@ds027668.mongolab.com:27668/zooplr_search',
-    cloudinaryConf={
-        cloud_name: 'monsoon',
-        api_key: '683422432131363',
-        api_secret: 'zFh19SV6E7xtt7Jl1WB2f-TG0Bc'
     };
 
 

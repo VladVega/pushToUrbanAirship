@@ -16,8 +16,13 @@
     "bin": {
         "uppercaseme": "./bin/uppercaseme"
     },
-    "dependencies": {},
+    "dependencies": {
+        "mongodb": "1.3.x",
+        "cloudinary": "1.0.x",
+        "busboy": "0.0.x",
+        "lodash": "2.4.x"
+    },
     "engines": {
-        "node": "*"
+        "node": "0.8.0"
     }
 }
