@@ -25,6 +25,8 @@
 var Busboy = require('busboy'),
     mongo = require('mongodb'),
     _ = require('lodash'),
+    Grid = require('gridfs-stream'),
+    async= require('async'),
     Cloudinary = require('cloudinary');
 
 
@@ -36,86 +38,66 @@ var Multipart_Check = /^multipart/,
 module.exports = function gridfsAndCloudinaryUploader(mongoDBInstance, cloudinaryConfigObj ){
 
     Cloudinary.config(cloudinaryConfigObj);
+    var GridInst= new Grid(mongoDBInstance, mongo);
 
     return function(req, res, next){
         if ((req.method === 'POST' || req.method === 'PUT') && req.readable && Multipart_Check.test(req.get('Content-Type'))) {
 
             var busboy = new Busboy({ headers: req.headers }),
-                filesNumberInProcess = 0;
+                filesStartedProcessing = 0;
 
             req.fileInfoArr= [];
 
             busboy.on('file', function(fieldname, fileStream, filename, encoding, mimetype) {
 
-                console.log('file being processed:', fieldname, filename, encoding, mimetype)
-
-                var streamsOpen = 0,
+                var gridStream,
+                    cloudinaryStream,
                     gridFileName,
-                    gs,
-                    fileInfo={};
+                    fileInfo;
 
-                filesNumberInProcess += 1;
-
-                fileStream.pause();
-
+                filesStartedProcessing += 1;
                 gridFileName = mongoDBInstance.bson_serializer.ObjectID().toString();
-                console.log('New file:', gridFileName)
-                gs = new mongo.GridStore(mongoDBInstance, gridFileName, "w", {"content_type": mimetype});
-                gs.open(function(err, gs){
+                fileInfo= {name: filename, type: mimetype, storage_id: gridFileName }
 
+                async.parallel([
+                    function gridStreamInsertion(cb){
+                        gridStream= GridInst.createWriteStream({
+                            filename: gridFileName,
+                            content_type: mimetype
+                        });
+                        gridStream.on('close', function (file) {
+                            // do something with `file`
+                            console.log('closing:',file);
+                            cb();
+                        });
+                        fileStream.pipe(gridStream);
+                    },
+                    function cloudinaryStreamInsertion(cb){
+                        if(Image_Check.test(mimetype)){
+
+                            cloudinaryStream= getCloudinaryStream(gridFileName, function(err, result){
+                                //executes at end of stream
+                                if(err) return cb(err);
+                                fileInfo= _.extend(result, fileInfo);
+                                cb();
+                            });
+
+                            fileStream.on('data',cloudinaryStream.write);
+                            fileStream.on('end',cloudinaryStream.end);
+
+                            fileInfo.storage_type = 'cloudinary';
+
+                        }else{
+                            fileInfo.storage_type = 'gridfs';
+                            cb()
+                        }
+                    }
+                ],function(err, results){
                     if(err) return next(err);
 
-                    streamsOpen += 1; //gridfs stream
-
-                    var cloudinaryStream,
-                        storageType;
-
-                    if(Image_Check.test(mimetype)){
-
-                        streamsOpen += 1; //cloudinary stream
-
-                        cloudinaryStream= getCloudinaryStream(gridFileName, function(err, result){
-                            //executes at end of stream
-                            if(err) return next(err);
-                            fileInfo= _.extend(result, fileInfo);
-                            finishProcessingFile();
-                        });
-
-                        storageType = 'cloudinary';
-                    }else{
-                        storageType = 'gridfs';
-                    }
-
-                    _.extend(fileInfo,{name: filename, type: mimetype, storage_id: gridFileName, storage_type: storageType });
-
-                    fileStream.on('data',function(buffer){
-                        if(cloudinaryStream){
-                            cloudinaryStream.write(buffer);
-                        }
-                        gs.write(buffer);
-                    });
-                    fileStream.on('end',function(buffer){
-                        if(cloudinaryStream){
-                            cloudinaryStream.end(buffer);
-                        }
-                        gs.end(buffer);
-                        setTimeout(function(){
-                            gs.close(function(err, result){
-                                console.log('closing '+gridFileName);
-                                finishProcessingFile();
-                            });
-                        },50)
-                    });
-
-                    fileStream.resume();
+                    req.fileInfoArr.push(fileInfo);
                 });
-                function finishProcessingFile(){
-                    streamsOpen -= 1;
-                    if(!streamsOpen){
-                        req.fileInfoArr.push(fileInfo);
-                        filesNumberInProcess -= 1;
-                    }
-                }
+
             });
             busboy.on('field', function(fieldname, val, valTruncated, keyTruncated) {
                 if(fieldname && fieldname == 'json_params' ){ //preferred way of including additional params
@@ -149,7 +131,7 @@ module.exports = function gridfsAndCloudinaryUploader(mongoDBInstance, cloudinar
         }
 
         function endMultipart(){
-            if(filesNumberInProcess > 0){ //ensures that streams are closed out and all files processed before ending them processing.
+            if(filesStartedProcessing > req.fileInfoArr.length){ //ensures that streams are closed out and all files processed before ending them processing.
                 return setTimeout(endMultipart, 100);
             }
 
