@@ -57,6 +57,7 @@ module.exports = function gridfsAndCloudinaryUploader(mongoDBInstance, cloudinar
                 fileStream.pause();
 
                 gridFileName = mongoDBInstance.bson_serializer.ObjectID().toString();
+                console.log('New file:', gridFileName)
                 gs = new mongo.GridStore(mongoDBInstance, gridFileName, "w", {"content_type": mimetype});
                 gs.open(function(err, gs){
 
