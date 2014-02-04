@@ -47,6 +47,8 @@ module.exports = function gridfsAndCloudinaryUploader(mongoDBInstance, cloudinar
 
             busboy.on('file', function(fieldname, fileStream, filename, encoding, mimetype) {
 
+                console.log('file being processed:', fieldname, filename, encoding, mimetype)
+
                 var streamsOpen = 0,
                     gridFileName,
                     gs,
@@ -97,9 +99,12 @@ module.exports = function gridfsAndCloudinaryUploader(mongoDBInstance, cloudinar
                             cloudinaryStream.end(buffer);
                         }
                         gs.end(buffer);
-                        gs.close(function(err, result){
-                            finishProcessingFile();
-                        });
+                        setTimeout(function(){
+                            gs.close(function(err, result){
+                                console.log('closing '+gridFileName);
+                                finishProcessingFile();
+                            });
+                        },50)
                     });
 
                     fileStream.resume();

@@ -12,6 +12,7 @@ var mongoUrl= 'yourMongoUrl',
     };
 
 
+
 var app = Express();
 app.use(Express.static(__dirname + '/public'));
 
