@@ -2,7 +2,7 @@
     "author": "Vlad Vega",
     "name": "upload_to_gridfs_cloudinary",
     "description": "Express middleware that streams files to gridFS and Cloudinary simultaneously",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "repository": {
         "url": "https://github.com/VladVega/uploadToCloudinaryGridfs",
         "type":"git"
@@ -19,6 +19,7 @@
         "cloudinary": "1.0.x",
         "busboy": "0.0.x",
         "lodash": "2.4.x",
+        "async":"0.2.x",
         "gridfs-stream":"0.4.x"
     },
     "engines": {
