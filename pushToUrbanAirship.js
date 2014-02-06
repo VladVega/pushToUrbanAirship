@@ -25,9 +25,9 @@
 var Request = require('request');
 
 
-module.exports = function pushToUrbanAirship(key, secret, master ){
+module.exports = function pushToUrbanAirship(auth ){
 
-    var auth_token= new Buffer(key + ":" + master, "utf8").toString("base64");
+    var auth_token= new Buffer(auth.key + ":" + auth.master, "utf8").toString("base64");
 
     return function(jsonBody, callback){
         Request({
