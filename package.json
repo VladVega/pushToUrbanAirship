@@ -1,8 +1,8 @@
 {
     "author": "Vlad Vega",
-    "name": "upload_to_gridfs_cloudinary",
-    "description": "Express middleware that streams files to gridFS and Cloudinary simultaneously",
-    "version": "0.0.9",
+    "name": "push_to_urbanairship",
+    "description": "Easy config and push function to Urban Airship phone notifications",
+    "version": "0.0.1",
     "repository": {
         "url": "https://github.com/VladVega/uploadToCloudinaryGridfs",
         "type":"git"
